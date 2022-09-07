@@ -66,10 +66,13 @@ const SurveyQuestion = (props) => {
   } = props.getQuestionnaire;
 
   const questions = getQuestionnaire?.question?.items;
-  const [currentQuestion, setCurrentQuestion] = useState(() =>
-    questions?.find((q) => q?.order === 1)
-  );
-
+  const firstQuestion =
+    questions?.find((q) => q?.order === 1) ||
+    questions?.sort((a, b) => b?.order - a?.order)[questions?.length - 1];
+  const lastQuestion = questions?.sort((a, b) => a?.order - b?.order)[
+    questions?.length - 1
+  ];
+  const [currentQuestion, setCurrentQuestion] = useState(firstQuestion);
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [ANSLIST, setANSLIST] = useState([]);
   const [checked, setChecked] = React.useState([]);
@@ -296,6 +299,7 @@ const SurveyQuestion = (props) => {
 
               {q?.listOptions.map((option, o) => (
                 <FormControlLabel
+                  key={o}
                   value={currentAnswer}
                   onChange={handleChange}
                   control={<Checkbox key={o} value={option?.listValue} />}
@@ -324,6 +328,7 @@ const SurveyQuestion = (props) => {
 
               {q?.listOptions.map((option, o) => (
                 <FormControlLabel
+                  key={o}
                   value={currentAnswer}
                   onChange={handleChange}
                   control={<Checkbox key={o} value={option?.listValue} />}
@@ -367,14 +372,14 @@ const SurveyQuestion = (props) => {
 
   useEffect(() => {
     if (currentQuestion) {
-      if (currentQuestion?.order === 10) {
+      if (currentQuestion?.order === lastQuestion?.order) {
         setFinal(true);
       } else {
         setFinal(false);
       }
     }
   }, [currentQuestion]);
-  console.log("ANSLIST", ANSLIST, currentQuestion);
+  // console.log("ANSLIST", ANSLIST, currentQuestion);
 
   if (loading) {
     return (
