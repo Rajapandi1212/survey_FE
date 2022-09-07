@@ -95,7 +95,7 @@ const SurveyQuestion = (props) => {
   };
   const handleFinish = () => {
     ANSLIST.map((response) => {
-      console.log("response", response);
+      // console.log("response", response);
       props.onCreateResponse({
         responsesQuId: response?.questionId,
         res: response?.answer,
@@ -157,19 +157,24 @@ const SurveyQuestion = (props) => {
       const nextQuestion = currentQuestion?.dependent?.options?.find(
         (o) => o?.dependentValue === ansofDepQuestion?.answer
       );
-      console.log("CS :", nextQuestion);
+      // console.log("CS :", nextQuestion);
       setCurrentQuestion(
         questions?.find((q) => q?.id === nextQuestion?.nextQuestion)
       );
     }
     if (currentQuestion?.isSelf) {
-      const nextQue = currentQuestion?.listOptions?.find(
-        (l) => l?.listValue === currentAnswer
-      );
-      if (nextQue) {
-        setCurrentQuestion(
-          questions.find((q) => q?.id === nextQue?.nextQuestion)
+      if (currentQuestion?.type === "TEXT") {
+        const nextQuestionId = currentQuestion?.listOptions[0].nextQuestion;
+        setCurrentQuestion(questions.find((q) => q?.id === nextQuestionId));
+      } else {
+        const nextQue = currentQuestion?.listOptions?.find(
+          (l) => l?.listValue === currentAnswer
         );
+        if (nextQue) {
+          setCurrentQuestion(
+            questions.find((q) => q?.id === nextQue?.nextQuestion)
+          );
+        }
       }
     }
     if (!currentQuestion?.isDependent && !currentQuestion?.isSelf) {
@@ -185,7 +190,7 @@ const SurveyQuestion = (props) => {
     const lastAnswer = ANSLIST[ANSLIST.length - 1];
 
     const PreQue = lastAnswer?.questionId;
-    console.log("currentAnswer", PreQue);
+    // console.log("currentAnswer", PreQue);
 
     if (PreQue) {
       setCurrentQuestion(questions.find((q) => q?.id === PreQue));
