@@ -369,6 +369,8 @@ const SurveyQuestion = (props) => {
     if (currentQuestion) {
       if (currentQuestion?.order === 10) {
         setFinal(true);
+      } else {
+        setFinal(false);
       }
     }
   }, [currentQuestion]);
