@@ -336,11 +336,13 @@ const QuestionnarieQuestionPart = (props) => {
                       setNextQuestionForOther(event.target.value)
                     }
                   >
-                    {getQuestionnaire?.question?.items.map((que, q) => (
-                      <MenuItem value={que?.id} key={q}>
-                        {que?.order + "  " + que?.qu}
-                      </MenuItem>
-                    ))}
+                    {getQuestionnaire?.question?.items
+                      .sort((a, b) => a?.order - b?.order)
+                      .map((que, q) => (
+                        <MenuItem value={que?.id} key={q}>
+                          {que?.order + "  " + que?.qu}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               )}
@@ -357,11 +359,13 @@ const QuestionnarieQuestionPart = (props) => {
                         setDependentQuestion(event.target.value)
                       }
                     >
-                      {getQuestionnaire?.question?.items.map((que, q) => (
-                        <MenuItem value={que?.id} key={q}>
-                          {que?.order + "  " + que?.qu}
-                        </MenuItem>
-                      ))}
+                      {getQuestionnaire?.question?.items
+                        .sort((a, b) => a?.order - b?.order)
+                        .map((que, q) => (
+                          <MenuItem value={que?.id} key={q}>
+                            {que?.order + "  " + que?.qu}
+                          </MenuItem>
+                        ))}
                     </Select>
                   </FormControl>
                   {dependentQuestion &&
@@ -389,11 +393,13 @@ const QuestionnarieQuestionPart = (props) => {
                               )
                             }
                           >
-                            {getQuestionnaire?.question?.items.map((que, q) => (
-                              <MenuItem value={que?.id} key={q}>
-                                {que?.order + "  " + que?.qu}
-                              </MenuItem>
-                            ))}
+                            {getQuestionnaire?.question?.items
+                              .sort((a, b) => a?.order - b?.order)
+                              .map((que, q) => (
+                                <MenuItem value={que?.id} key={q}>
+                                  {que?.order + "  " + que?.qu}
+                                </MenuItem>
+                              ))}
                           </Select>
                         </FormControl>
                       ))}
@@ -439,11 +445,13 @@ const QuestionnarieQuestionPart = (props) => {
                     value={nextQuestion}
                     onChange={(event) => setNextQuestion(event.target.value)}
                   >
-                    {getQuestionnaire?.question?.items.map((que, q) => (
-                      <MenuItem value={que?.id} key={q}>
-                        {que?.order + "  " + que?.qu}
-                      </MenuItem>
-                    ))}
+                    {getQuestionnaire?.question?.items
+                      .sort((a, b) => a?.order - b?.order)
+                      .map((que, q) => (
+                        <MenuItem value={que?.id} key={q}>
+                          {que?.order + "  " + que?.qu}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               )}
@@ -504,38 +512,40 @@ const QuestionnarieQuestionPart = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {getQuestionnaire?.question?.items.map((question, i) => (
-                <TableRow key={i}>
-                  <TableCell>{question?.order}</TableCell>
-                  <TableCell>{question.qu}</TableCell>
-                  <TableCell>{question.type}</TableCell>
-                  <TableCell>
-                    {question.listOptions
-                      ? question.listOptions.map((option, l) => (
-                          <li key={l}>{option?.listValue}</li>
-                        ))
-                      : "(Empty)"}
-                  </TableCell>
-                  <TableCell>
-                    {/* <Button
+              {getQuestionnaire?.question?.items
+                .sort((a, b) => a?.order - b?.order)
+                .map((question, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{question?.order}</TableCell>
+                    <TableCell>{question.qu}</TableCell>
+                    <TableCell>{question.type}</TableCell>
+                    <TableCell>
+                      {question.listOptions
+                        ? question.listOptions.map((option, l) => (
+                            <li key={l}>{option?.listValue}</li>
+                          ))
+                        : "(Empty)"}
+                    </TableCell>
+                    <TableCell>
+                      {/* <Button
                     size="small"
                     color="primary"
                     onClick={handleSnackBarClick}
                   >
                     <EditIcon />
                   </Button> */}
-                    <Button
-                      size="small"
-                      color="primary"
-                      onClick={() => {
-                        handleDelete(question.id);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <Button
+                        size="small"
+                        color="primary"
+                        onClick={() => {
+                          handleDelete(question.id);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </Paper>
