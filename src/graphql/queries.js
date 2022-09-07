@@ -115,7 +115,7 @@ export const getQuestionnaire = /* GraphQL */ `
       name
       description
       type
-      question {
+      question(limit: 300) {
         items {
           id
           qu
