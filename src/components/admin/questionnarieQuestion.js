@@ -25,7 +25,6 @@ import InputLabel from "@material-ui/core/InputLabel";
 import CloseIcon from "@material-ui/icons/Close";
 import Snackbar from "@material-ui/core/Snackbar";
 import IconButton from "@material-ui/core/IconButton";
-import { Link } from "react-router-dom";
 
 import { graphql, compose, withApollo } from "react-apollo";
 import gql from "graphql-tag";
@@ -34,15 +33,16 @@ import {
   listQuestionnaires,
   getQuestionnaire,
 } from "../../graphql/queries";
-import {
-  createQuestion,
-  updateQuestion,
-  deleteQuestion,
-} from "../../graphql/mutations";
+import { createQuestion, deleteQuestion } from "../../graphql/mutations";
 
 import AdminMenu from "./index";
 import { useState } from "react";
-import { validate } from "graphql";
+import {
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+} from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -62,84 +62,32 @@ const useStyles = makeStyles((theme) => ({
 
 const QuestionnarieQuestionPart = (props) => {
   const classes = useStyles();
-
-  const [open, setOpen] = useState(false);
-  const [question, setQuestion] = useState("");
-  const [type, setType] = useState("");
-  const [order, setOrder] = useState(1);
-  const [openAddListItem, setOpenAddListItem] = useState(false);
-
-  const [listItemOptions, setListItemOptions] = useState([]);
-  const [openAddCheckItem, setOpenAddCheckItem] = useState(false);
-  const [checkItemOptions, setCheckItemOptions] = useState([]);
-  const [listItem, setListItem] = useState("");
-  const [checkItem, setCheckItem] = useState("");
-  const [nextQuestion, setNextQuestion] = useState("");
-  const [nextQuestionForOther, setNextQuestionForOther] = useState("");
-  const [openEdit, setOpenEdit] = useState(false);
-  // const [currentQuestion, setCurrentQuestion] = useState(null);
-
-  //checkbox with text//
-
-  const [openCheckboxWithText, setOpenCheckboxWithText] = useState(false);
-  const [CbWithTextItemOptions, setCbWithTextItemOptions] = useState([]);
-  const [cbWithTextItem, setCbTextItem] = useState("");
-  //Redio with text//
-
-  const [openRadioWithText, setOpenRadioWithText] = useState(false);
-  const [radioWithTextItemOptions, setRadioWithTextItemOptions] = useState([]);
-  const [radioWithTextItem, setRadioTextItem] = useState("");
-
-  /*Closing Add checkbox Item with text Options dialog */
-  const handleAddCbWithTextItemClose = () => {
-    setOpenCheckboxWithText(false);
-  };
-
-  /* Addingcheck checkbox with text Options */
-
-  const handleAddingCbWithTextOptions = () => {
-    setListItemOptions((prevState) => [
-      ...prevState,
-      { listValue: cbWithTextItem, nextQuestion: nextQuestion },
-    ]);
-    setCbTextItem("");
-    setNextQuestion("");
-  };
-  /*Closing Add radio Item with text Options dialog */
-  const handleAddRadioWithTextItemClose = () => {
-    setOpenRadioWithText(false);
-  };
-
-  /* Adding radio with text Options */
-
-  const handleAddingRadioWithTextOptions = () => {
-    setListItemOptions((prevState) => [
-      ...prevState,
-      { listValue: radioWithTextItem, nextQuestion: nextQuestion },
-    ]);
-    setRadioTextItem("");
-    setNextQuestion("");
-  };
-
   const {
     data: { loading, error, getQuestionnaire },
   } = props.getQuestionnaire;
-
-  /* open edit question dial box*/
-  const handleOpenEditDialog = () => {
-    setOpenEdit(true);
-  };
-
-  /*Opening Creating new question Dialobox*/
-  const handleOpenDialog = () => {
-    setOpen(true);
-  };
+  const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [order, setOrder] = useState(1);
+  const [currentMode, setCurrentMode] = useState("normal");
+  const [type, setType] = useState("");
+  const [openAddListItem, setOpenAddListItem] = useState(false);
+  const [listItemOptions, setListItemOptions] = useState([]);
+  const [listItem, setListItem] = useState("");
+  const [nextQuestion, setNextQuestion] = useState("");
+  const [nextQuestionForOther, setNextQuestionForOther] = useState("");
+  const [dependentQuestion, setDependentQuestion] = useState("");
+  const [dependentQuestionOptions, setDependentQuestionOptions] = useState([]);
 
   /*Deleting question by ID*/
   const handleDelete = (id) => {
     props.onDeleteQuestion({
       id: id,
     });
+  };
+
+  /*Opening Creating new question Dialobox*/
+  const handleOpenDialog = () => {
+    setOpen(true);
   };
 
   /*Changing new question value */
@@ -150,6 +98,12 @@ const QuestionnarieQuestionPart = (props) => {
     }
     setQuestion(newValue);
   };
+
+  /*Changing question mode */
+  const onModeChange = (event, newValue) => {
+    setCurrentMode(newValue);
+  };
+
   /*Changing new question value */
   const onTypeChange = (newValue) => {
     if (type === newValue) {
@@ -162,159 +116,110 @@ const QuestionnarieQuestionPart = (props) => {
   /*Creating new Question */
   const handleCreate = (event) => {
     event.preventDefault();
-
     let createQuestionQuery = {
       qu: question,
       type: type,
       order: order,
       questionQuestionnaireId: getQuestionnaire?.id,
     };
-
-    if (type === "LIST" && listItemOptions.length > 0) {
-      createQuestionQuery.listOptions = listItemOptions;
+    if (currentMode === "dependent") {
+      const dependentQuestionQuery = {
+        id: dependentQuestion,
+        options: dependentQuestionOptions,
+      };
+      createQuestionQuery.isDependent = true;
+      createQuestionQuery.dependent = dependentQuestionQuery;
     }
-
-    if (type === "CHECKBOX" && listItemOptions.length > 0) {
-      createQuestionQuery.listOptions = listItemOptions;
-    }
-    if (type === "CHECKBOXWITHTEXT" && listItemOptions.length > 0) {
-      createQuestionQuery.listOptions = listItemOptions;
-    }
-    if (type === "RADIOWITHTEXT" && listItemOptions.length > 0) {
-      createQuestionQuery.listOptions = listItemOptions;
-    } else {
-      if (nextQuestionForOther)
+    if (currentMode === "self") createQuestionQuery.isSelf = true;
+    if (type && type === "TEXT") {
+      if (currentMode === "self" && nextQuestionForOther) {
         createQuestionQuery.listOptions = {
           listValue: type,
           nextQuestion: nextQuestionForOther,
         };
+      }
     }
-    console.log("createQuestionQuery", createQuestionQuery);
-
+    if (type && type !== "TEXT") {
+      if (listItemOptions.length > 0)
+        createQuestionQuery.listOptions = listItemOptions;
+    }
+    // console.log("createQuestionQuery", createQuestionQuery);
     props.onCreateQuestion(createQuestionQuery, getQuestionnaire?.id);
     setQuestion("");
-    setType("");
     setOrder(1);
-    setNextQuestionForOther("");
-    setListItem("");
-    setCheckItem("");
-    setCbTextItem("");
-
-    setRadioTextItem("");
-
-    setNextQuestion("");
-    setListItemOptions([]);
-
-    setOpen(false);
-  };
-
-  /*edit question*/
-  const handleEdit = (event) => {
-    event.preventDefault();
-    let updateQuestionQuery = {
-      qu: question,
-      type: type,
-      order: order,
-      questionQuestionnaireId: getQuestionnaire?.id,
-    };
-    if (type === "LIST" && listItemOptions.length > 0) {
-      updateQuestionQuery.listOptions = listItemOptions;
-    } else {
-      if (nextQuestionForOther)
-        updateQuestionQuery.listOptions = {
-          listValue: type,
-          nextQuestion: nextQuestionForOther,
-        };
-    }
-    props.onUpadateQuestion(
-      updateQuestionQuery,
-      getQuestionnaire?.getQuestion?.id
-    );
-
+    setCurrentMode("normal");
     setType("");
-    setOrder(1);
     setNextQuestionForOther("");
     setListItem("");
     setNextQuestion("");
     setListItemOptions([]);
+    setDependentQuestion("");
+    setDependentQuestionOptions([]);
     setOpen(false);
   };
 
   /* Get quetion by questionID */
   const onGettingQuestionById = (id) => {
     const que = getQuestionnaire?.question?.items?.find((q) => q?.id === id);
-
     return que?.qu ?? id;
   };
 
   /* Adding List Item Options */
   const handleAddingListItemOptions = () => {
-    setListItemOptions((prevState) => [
-      ...prevState,
-      { listValue: listItem, nextQuestion: nextQuestion },
-    ]);
+    let listQuery = {
+      listValue: listItem,
+    };
+    if (currentMode === "self") listQuery.nextQuestion = nextQuestion;
+    setListItemOptions((prevState) => [...prevState, listQuery]);
     setListItem("");
     setNextQuestion("");
   };
-  /* Addingcheck Item Options */
-  const handleAddingCheckItemOptions = () => {
-    setListItemOptions((prevState) => [
-      ...prevState,
-      { listValue: checkItem, nextQuestion: nextQuestion },
+
+  /* Adding List Item Options */
+  const handleSettingDependentNextQuestion = (que, optionValue) => {
+    const isAlreadyExisting = dependentQuestionOptions?.find(
+      (option) => option?.dependentValue === optionValue
+    );
+    if (isAlreadyExisting) {
+      setDependentQuestionOptions(
+        dependentQuestionOptions?.filter(
+          (option) => option?.dependentValue !== optionValue
+        )
+      );
+    }
+    setDependentQuestionOptions((prevSate) => [
+      ...prevSate,
+      { dependentValue: optionValue, nextQuestion: que },
     ]);
-    setCheckItem("");
-    setNextQuestion("");
   };
 
   /*Closing Add List Item Options dialog */
   const handleAddListItemClose = () => {
     setOpenAddListItem(false);
   };
-  /*Closing Add checkbox Item with text Options dialog */
-  const handleAddCheckItemClose = () => {
-    setOpenAddCheckItem(false);
-  };
 
   /*Closing create question dialog */
   const handleClose = () => {
+    setQuestion("");
+    setOrder(1);
+    setCurrentMode("normal");
+    setType("");
+    setNextQuestionForOther("");
+    setListItem("");
+    setNextQuestion("");
+    setListItemOptions([]);
+    setDependentQuestion("");
+    setDependentQuestionOptions([]);
     setOpen(false);
   };
 
-  /*Closing edit question dialog */
-  const handleEditClose = () => {
-    setOpenEdit(false);
-  };
   /* Side effect to open List dialog */
   useEffect(() => {
-    if (type === "LIST") {
+    if (type && type !== "TEXT") {
+      if (type === "CHECKBOX") setCurrentMode("normal");
       setOpenAddListItem(true);
     }
   }, [type]);
-
-  useEffect(() => {
-    if (type === "CHECKBOX") {
-      setOpenAddCheckItem(true);
-    }
-  }, [type]);
-  useEffect(() => {
-    if (type === "CHECKBOXWITHTEXT") {
-      setOpenCheckboxWithText(true);
-    }
-  }, [type]);
-
-  useEffect(() => {
-    if (type === "RADIOWITHTEXT") {
-      setOpenRadioWithText(true);
-    }
-  }, [type]);
-
-  console.log(
-    "checkItemOptions",
-    checkItemOptions,
-    type,
-    checkItemOptions?.length
-  );
-
   if (loading) {
     return (
       <div>
@@ -343,117 +248,6 @@ const QuestionnarieQuestionPart = (props) => {
     <div className={classes.root}>
       <AdminMenu />
       <div>
-        {/* //edit// start*/}
-        <Dialog
-          fullWidth
-          open={openEdit}
-          onClose={handleEditClose}
-          aria-labelledby="form-dialog-title"
-        >
-          <FormControl>
-            <DialogTitle id="form-dialog-title">
-              Create Question - {getQuestionnaire?.name}
-            </DialogTitle>
-            <DialogContent>
-              <DialogContentText>
-                To create a new Question, please complete the following details.
-              </DialogContentText>
-              {/* <DialogContentText>
-         Questionnaire :  <span style={{textDecoration:"underline",fontSize:"18px"}}> {getQuestionnaire?.name}</span>
-            </DialogContentText> */}
-              <TextField
-                autoFocus
-                margin="dense"
-                id="qu"
-                label="Question"
-                value={question}
-                onChange={(event) => onQuestionChange(event.target.value)}
-                fullWidth
-              />
-              <FormControl fullWidth>
-                <InputLabel>Type</InputLabel>
-                <Select
-                  margin="dense"
-                  fullWidth
-                  value={type}
-                  onChange={(event) => onTypeChange(event.target.value)}
-                >
-                  <MenuItem value={"TEXT"}>Text</MenuItem>
-                  <MenuItem value={"LIST"}>List</MenuItem>
-                  <MenuItem value={"CHECKBOX"}>Checkbox</MenuItem>
-                  <MenuItem value={"CHECKBOXWITHTEXT"}>
-                    Checkbox with text
-                  </MenuItem>
-                  <MenuItem value={"RADIOWITHTEXT"}>Radio with text</MenuItem>
-                  {/* <MenuItem value={"BOOL"}>Boolean</MenuItem> */}
-                </Select>
-              </FormControl>
-              <TextField
-                margin="dense"
-                id="order"
-                label="Order"
-                type="number"
-                value={order}
-                placeholder="Similar to question number"
-                onChange={(event) => setOrder(event.target.value)}
-                fullWidth
-              />
-              {type === "TEXT" &&
-                type === "CHECKBOX" &&
-                type === "CHECKBOXWITHTEXT" && (
-                  <FormControl fullWidth>
-                    <InputLabel>Next question</InputLabel>
-                    <Select
-                      margin="dense"
-                      fullWidth
-                      value={nextQuestionForOther}
-                      onChange={(event) =>
-                        setNextQuestionForOther(event.target.value)
-                      }
-                    >
-                      {getQuestionnaire?.question?.items.map((que, q) => (
-                        <MenuItem value={que?.id} key={q}>
-                          {que?.qu}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-              {/* {type === "CHECKBOX" && (
-                <FormControl fullWidth>
-                  <InputLabel>Next question</InputLabel>
-                  <Select
-                    margin="dense"
-                    fullWidth
-                    value={nextQuestionForOther}
-                    onChange={(event) =>
-                      setNextQuestionForOther(event.target.value)
-                    }
-                  >
-                    {getQuestionnaire?.question?.items.map((que, q) => (
-                      <MenuItem value={que?.id} key={q}>
-                        {que?.qu}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )} */}
-
-              <br />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleEditClose} color="default">
-                Cancel
-              </Button>
-              <Button onClick={handleEdit} type="button" color="primary">
-                Create
-              </Button>
-            </DialogActions>
-          </FormControl>
-        </Dialog>
-
-        {/* //edit//  end*/}
-
         <Dialog
           fullWidth
           open={open}
@@ -465,12 +259,6 @@ const QuestionnarieQuestionPart = (props) => {
               Create Question - {getQuestionnaire?.name}
             </DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                To create a new Question, please complete the following details.
-              </DialogContentText>
-              {/* <DialogContentText>
-         Questionnaire :  <span style={{textDecoration:"underline",fontSize:"18px"}}> {getQuestionnaire?.name}</span>
-            </DialogContentText> */}
               <TextField
                 autoFocus
                 margin="dense"
@@ -480,24 +268,6 @@ const QuestionnarieQuestionPart = (props) => {
                 onChange={(event) => onQuestionChange(event.target.value)}
                 fullWidth
               />
-              <FormControl fullWidth>
-                <InputLabel>Type</InputLabel>
-                <Select
-                  margin="dense"
-                  fullWidth
-                  value={type}
-                  onChange={(event) => onTypeChange(event.target.value)}
-                >
-                  <MenuItem value={"TEXT"}>Text</MenuItem>
-                  <MenuItem value={"LIST"}>List</MenuItem>
-                  {/* <MenuItem value={"BOOL"}>Boolean</MenuItem> */}
-                  <MenuItem value={"CHECKBOX"}>Checkbox </MenuItem>
-                  <MenuItem value={"CHECKBOXWITHTEXT"}>
-                    Checkbox with text
-                  </MenuItem>
-                  <MenuItem value={"RADIOWITHTEXT"}>Radio with text</MenuItem>
-                </Select>
-              </FormControl>
               <TextField
                 margin="dense"
                 id="order"
@@ -508,7 +278,54 @@ const QuestionnarieQuestionPart = (props) => {
                 onChange={(event) => setOrder(event.target.value)}
                 fullWidth
               />
-              {type === "TEXT" && (
+              <FormControl fullWidth>
+                <FormLabel
+                  style={{ margin: "10px 0", color: "black" }}
+                  id="demo-radio-buttons-group-label"
+                >
+                  Mode
+                </FormLabel>
+                <RadioGroup
+                  aria-labelledby="demo-radio-buttons-group-label"
+                  name="radio-buttons-group"
+                  value={currentMode}
+                  onChange={onModeChange}
+                  row
+                >
+                  <FormControlLabel
+                    value="normal"
+                    control={<Radio />}
+                    label="Normal"
+                  />
+                  <FormControlLabel
+                    value="self"
+                    control={<Radio />}
+                    label="Self"
+                  />
+                  <FormControlLabel
+                    value="dependent"
+                    control={<Radio />}
+                    label="Dependent"
+                  />
+                </RadioGroup>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Type</InputLabel>
+                <Select
+                  margin="dense"
+                  fullWidth
+                  value={type}
+                  onChange={(event) => onTypeChange(event.target.value)}
+                >
+                  <MenuItem value={"TEXT"}>Text</MenuItem>
+                  <MenuItem value={"RADIO"}>Radio</MenuItem>
+                  <MenuItem value={"CHECKBOX"}>Checkbox</MenuItem>
+                  {/* <MenuItem value={"LISTTEXT"}>List Text</MenuItem> */}
+                  {/* <MenuItem value={"CHECKBOXTEXT"}>Checkbox Text</MenuItem> */}
+                </Select>
+              </FormControl>
+
+              {type === "TEXT" && currentMode === "self" && (
                 <FormControl fullWidth>
                   <InputLabel>Next question</InputLabel>
                   <Select
@@ -521,11 +338,66 @@ const QuestionnarieQuestionPart = (props) => {
                   >
                     {getQuestionnaire?.question?.items.map((que, q) => (
                       <MenuItem value={que?.id} key={q}>
-                        {que?.qu}
+                        {que?.order + "  " + que?.qu}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
+              )}
+
+              {currentMode === "dependent" && (
+                <>
+                  <FormControl fullWidth style={{ margin: "10px 0" }}>
+                    <InputLabel>Dependent question</InputLabel>
+                    <Select
+                      margin="dense"
+                      fullWidth
+                      value={dependentQuestion}
+                      onChange={(event) =>
+                        setDependentQuestion(event.target.value)
+                      }
+                    >
+                      {getQuestionnaire?.question?.items.map((que, q) => (
+                        <MenuItem value={que?.id} key={q}>
+                          {que?.order + "  " + que?.qu}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  {dependentQuestion &&
+                    getQuestionnaire?.question?.items
+                      .find((q) => q.id === dependentQuestion)
+                      ?.listOptions?.map((options, i) => (
+                        <FormControl
+                          fullWidth
+                          style={{ margin: "3px 0" }}
+                          key={i}
+                        >
+                          <InputLabel>{options?.listValue}</InputLabel>
+                          <Select
+                            margin="dense"
+                            fullWidth
+                            value={
+                              dependentQuestionOptions.find(
+                                (o) => o?.dependentValue === options?.listValue
+                              )?.nextQuestion
+                            }
+                            onChange={(event) =>
+                              handleSettingDependentNextQuestion(
+                                event.target.value,
+                                options?.listValue
+                              )
+                            }
+                          >
+                            {getQuestionnaire?.question?.items.map((que, q) => (
+                              <MenuItem value={que?.id} key={q}>
+                                {que?.order + "  " + que?.qu}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      ))}
+                </>
               )}
 
               <br />
@@ -534,7 +406,7 @@ const QuestionnarieQuestionPart = (props) => {
               <Button onClick={handleClose} color="default">
                 Cancel
               </Button>
-              <Button onClick={handleCreate} type="button" color="primary">
+              <Button onClick={handleCreate} type="submit" color="primary">
                 Create
               </Button>
             </DialogActions>
@@ -558,39 +430,43 @@ const QuestionnarieQuestionPart = (props) => {
                 onChange={(event) => setListItem(event.target.value)}
                 fullWidth
               />
-              <FormControl fullWidth>
-                <InputLabel>Next question</InputLabel>
-                <Select
-                  margin="dense"
-                  fullWidth
-                  value={nextQuestion}
-                  onChange={(event) => setNextQuestion(event.target.value)}
-                >
-                  {getQuestionnaire?.question?.items.map((que, q) => (
-                    <MenuItem value={que?.id} key={q}>
-                      {que?.qu}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {currentMode === "self" && (
+                <FormControl fullWidth>
+                  <InputLabel>Next question</InputLabel>
+                  <Select
+                    margin="dense"
+                    fullWidth
+                    value={nextQuestion}
+                    onChange={(event) => setNextQuestion(event.target.value)}
+                  >
+                    {getQuestionnaire?.question?.items.map((que, q) => (
+                      <MenuItem value={que?.id} key={q}>
+                        {que?.order + "  " + que?.qu}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
               {listItemOptions?.length > 0 && (
                 <div style={{ margin: "15px 0" }}>
                   <Table className={classes.table}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Option</TableCell>
-                        <TableCell>Question</TableCell>
-                        {/* <TableCell>Manage</TableCell> */}
+                        {currentMode === "self" && (
+                          <TableCell>Question</TableCell>
+                        )}
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {listItemOptions.map((item, i) => (
                         <TableRow key={i}>
                           <TableCell>{item?.listValue}</TableCell>
-                          <TableCell>
-                            {" "}
-                            {onGettingQuestionById(item?.nextQuestion)}
-                          </TableCell>
+                          {currentMode === "self" && (
+                            <TableCell>
+                              {onGettingQuestionById(item?.nextQuestion)}
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -612,233 +488,6 @@ const QuestionnarieQuestionPart = (props) => {
             </DialogActions>
           </FormControl>
         </Dialog>
-
-        {/* checkbox  */}
-
-        <Dialog
-          open={openAddCheckItem}
-          onClose={handleAddCheckItemClose}
-          aria-labelledby="form-dialog-title"
-          fullWidth
-        >
-          <FormControl>
-            <DialogTitle id="form-dialog-title">Add Check Items</DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin="dense"
-                id="qu"
-                label="checkbox list item"
-                value={checkItem}
-                onChange={(event) => setCheckItem(event.target.value)}
-                fullWidth
-              />
-              <FormControl fullWidth>
-                <InputLabel>Next question</InputLabel>
-                <Select
-                  margin="dense"
-                  fullWidth
-                  value={nextQuestion}
-                  onChange={(event) => setNextQuestion(event.target.value)}
-                >
-                  {getQuestionnaire?.question?.items.map((que, q) => (
-                    <MenuItem value={que?.id} key={q}>
-                      {que?.qu}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {listItemOptions?.length > 0 && (
-                <div style={{ margin: "15px 0" }}>
-                  <Table className={classes.table}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Option</TableCell>
-                        <TableCell>Question</TableCell>
-                        {/* <TableCell>Manage</TableCell> */}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {listItemOptions.map((item, i) => (
-                        <TableRow key={i}>
-                          <TableCell>{item?.listValue}</TableCell>
-                          <TableCell>
-                            {" "}
-                            {onGettingQuestionById(item?.nextQuestion)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleAddCheckItemClose} color="default">
-                Close
-              </Button>
-              <Button
-                onClick={handleAddingCheckItemOptions}
-                type="button"
-                color="primary"
-              >
-                Add
-              </Button>
-            </DialogActions>
-          </FormControl>
-        </Dialog>
-
-        {/* checkbox with text */}
-        <Dialog
-          open={openCheckboxWithText}
-          onClose={handleAddCbWithTextItemClose}
-          aria-labelledby="form-dialog-title"
-          fullWidth
-        >
-          <FormControl>
-            <DialogTitle id="form-dialog-title">
-              Add Checkbox with text item
-            </DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin="dense"
-                id="qu"
-                label="checkbox list item"
-                value={cbWithTextItem}
-                onChange={(event) => setCbTextItem(event.target.value)}
-                fullWidth
-              />
-              <FormControl fullWidth>
-                <InputLabel>Next question</InputLabel>
-                <Select
-                  margin="dense"
-                  fullWidth
-                  value={nextQuestion}
-                  onChange={(event) => setNextQuestion(event.target.value)}
-                >
-                  {getQuestionnaire?.question?.items.map((que, q) => (
-                    <MenuItem value={que?.id} key={q}>
-                      {que?.qu}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {listItemOptions?.length > 0 && (
-                <div style={{ margin: "15px 0" }}>
-                  <Table className={classes.table}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Option</TableCell>
-                        <TableCell>Question</TableCell>
-                        {/* <TableCell>Manage</TableCell> */}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {listItemOptions.map((item, i) => (
-                        <TableRow key={i}>
-                          <TableCell>{item?.listValue}</TableCell>
-                          <TableCell>
-                            {" "}
-                            {onGettingQuestionById(item?.nextQuestion)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleAddCbWithTextItemClose} color="default">
-                Close
-              </Button>
-              <Button
-                onClick={handleAddingCbWithTextOptions}
-                type="button"
-                color="primary"
-              >
-                Add
-              </Button>
-            </DialogActions>
-          </FormControl>
-        </Dialog>
-
-        {/* Radio with text */}
-        <Dialog
-          open={openRadioWithText}
-          onClose={handleAddRadioWithTextItemClose}
-          aria-labelledby="form-dialog-title"
-          fullWidth
-        >
-          <FormControl>
-            <DialogTitle id="form-dialog-title">
-              Add Radio with text item
-            </DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin="dense"
-                id="qu"
-                label="Radio list item"
-                value={radioWithTextItem}
-                onChange={(event) => setRadioTextItem(event.target.value)}
-                fullWidth
-              />
-              <FormControl fullWidth>
-                <InputLabel>Next question</InputLabel>
-                <Select
-                  margin="dense"
-                  fullWidth
-                  value={nextQuestion}
-                  onChange={(event) => setNextQuestion(event.target.value)}
-                >
-                  {getQuestionnaire?.question?.items.map((que, q) => (
-                    <MenuItem value={que?.id} key={q}>
-                      {que?.qu}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {listItemOptions?.length > 0 && (
-                <div style={{ margin: "15px 0" }}>
-                  <Table className={classes.table}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Option</TableCell>
-                        <TableCell>Question</TableCell>
-                        {/* <TableCell>Manage</TableCell> */}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {listItemOptions.map((item, i) => (
-                        <TableRow key={i}>
-                          <TableCell>{item?.listValue}</TableCell>
-                          <TableCell>
-                            {" "}
-                            {onGettingQuestionById(item?.nextQuestion)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleAddRadioWithTextItemClose} color="default">
-                Close
-              </Button>
-              <Button
-                onClick={handleAddingRadioWithTextOptions}
-                type="button"
-                color="primary"
-              >
-                Add
-              </Button>
-            </DialogActions>
-          </FormControl>
-        </Dialog>
       </div>
       <main className={classes.content}>
         <Typography variant="h4">{getQuestionnaire?.name} </Typography>
@@ -847,7 +496,7 @@ const QuestionnarieQuestionPart = (props) => {
           <Table className={classes.table}>
             <TableHead>
               <TableRow>
-                <TableCell>Order</TableCell>
+                <TableCell>Question No</TableCell>
                 <TableCell>Question</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell>List Options</TableCell>
@@ -855,41 +504,38 @@ const QuestionnarieQuestionPart = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {getQuestionnaire?.question?.items
-                .sort((a, b) => a?.order - b?.order)
-                .map((question, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{question.order}</TableCell>
-                    <TableCell>{question.qu}</TableCell>
-                    <TableCell>{question.type}</TableCell>
-                    <TableCell>
-                      {question.listOptions
-                        ? question.listOptions.map((option, l) => (
-                            <li key={l}>{option?.listValue}</li>
-                          ))
-                        : "(Empty)"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="small"
-                        color="primary"
-                        component={Link}
-                        to={`/admin/editQuestion/${question.id}`}
-                      >
-                        <EditIcon />
-                      </Button>
-                      <Button
-                        size="small"
-                        color="primary"
-                        onClick={() => {
-                          handleDelete(question.id);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {getQuestionnaire?.question?.items.map((question, i) => (
+                <TableRow key={i}>
+                  <TableCell>{question?.order}</TableCell>
+                  <TableCell>{question.qu}</TableCell>
+                  <TableCell>{question.type}</TableCell>
+                  <TableCell>
+                    {question.listOptions
+                      ? question.listOptions.map((option, l) => (
+                          <li key={l}>{option?.listValue}</li>
+                        ))
+                      : "(Empty)"}
+                  </TableCell>
+                  <TableCell>
+                    {/* <Button
+                    size="small"
+                    color="primary"
+                    onClick={handleSnackBarClick}
+                  >
+                    <EditIcon />
+                  </Button> */}
+                    <Button
+                      size="small"
+                      color="primary"
+                      onClick={() => {
+                        handleDelete(question.id);
+                      }}
+                    >
+                      <DeleteIcon />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </Paper>
@@ -919,7 +565,6 @@ const Question = compose(
       };
     },
   }),
-
   graphql(gql(deleteQuestion), {
     props: (props) => ({
       onDeleteQuestion: (response) => {
@@ -946,37 +591,6 @@ const Question = compose(
               data.listQuestions.items = [
                 ...data.listQuestions.items.filter(
                   (item) => item.id !== createQuestion.id
-                ),
-                createQuestion,
-              ];
-            }
-
-            store.writeQuery({
-              query,
-              data,
-              variables: { filter: null, limit: null, nextToken: null },
-            });
-          },
-        });
-      },
-    }),
-  }),
-
-  graphql(gql(updateQuestion), {
-    props: (props) => ({
-      onUpadateQuestion: (response) => {
-        props.mutate({
-          variables: {
-            input: response,
-          },
-
-          update: (store, { data: { updateQuestion } }) => {
-            const query = gql(listQuestions);
-            const data = store.readQuery({ query });
-            if (data?.listQuestions?.items?.length > 0) {
-              data.listQuestions.items = [
-                ...data.listQuestions.items.filter(
-                  (item) => item.id !== updateQuestion.id
                 ),
                 createQuestion,
               ];
