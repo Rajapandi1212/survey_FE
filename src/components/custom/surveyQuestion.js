@@ -56,6 +56,10 @@ const useStyles = makeStyles((theme) =>
       marginLeft: theme.spacing(1),
       marginRight: theme.spacing(1),
     },
+    logo: {
+      maxWidth: 300,
+      paddingTop: 14,
+    },
   })
 );
 
@@ -412,6 +416,11 @@ const SurveyQuestion = (props) => {
 
   return (
     <div className={classes.root}>
+      <img
+        src="https://dynamix-cdn.s3.amazonaws.com/stonemorcom/stonemorcom_616045937.svg"
+        alt="logo"
+        className={classes.logo}
+      />
       <Typography className={classes.custom} variant="h5">
         {getQuestionnaire?.name}
       </Typography>

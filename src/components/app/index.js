@@ -48,7 +48,9 @@ import EditQuestion from "../admin/EditQuestion";
 
 const theme = createTheme({
   palette: {
-    primary: orange,
+    primary: {
+      main: "#5E8ABF",
+    },
     secondary: indigo,
   },
 });

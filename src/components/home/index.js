@@ -20,12 +20,12 @@ import { listSurveys } from "../../graphql/queries";
 const useStyles = makeStyles((theme) =>
   createStyles({
     card: {
-      maxWidth: 345,
-      margin: 10,
+      maxWidth: 600,
+      margin: 30,
     },
     media: {
       // object-fit is not supported by IE 11.
-      objectFit: "cover",
+      objectFit: "fill",
     },
     table: {
       minWidth: 700,
@@ -76,14 +76,14 @@ const HomePart = (props) => {
           preQuestionnaire,
           postQuestionnaire,
         }) => (
-          <Grid item sm={6} xs={12} key={id}>
+          <Grid item sm={4} xs={10} key={id}>
             <Card className={classes.card}>
               <CardActionArea>
                 <CardMedia
                   component="img"
                   alt={name}
                   className={classes.media}
-                  height="140"
+                  height="80"
                   image={image}
                   title={name}
                 />
